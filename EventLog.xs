@@ -417,7 +417,7 @@ CODE:
     if (USING_WIDE()) {
 	static const WCHAR *wEVFILE[] = {L"System", L"Security", L"Application"};
 	WCHAR *ptr, *tmpx;
-	WCHAR wmsgfile[MAX_PATH], wregPath[MAX_PATH], *wstrings[16];
+	WCHAR wmsgfile[MAX_PATH], wregPath[MAX_PATH], **wstrings;
 	WCHAR wsource[MAX_PATH+1], *wMsgBuf, *wlongstring;
 	char *MsgBuf;
 	DWORD i, id2;
@@ -426,6 +426,8 @@ CODE:
 	unsigned short j;
 	WCHAR *percent;
 	int percentLen, msgLen;
+
+        New(0, wstrings, numstrings+1, WCHAR*);
 
 	/* Which EventLog are we reading? */
 	New(0, wlongstring, length, WCHAR);
@@ -480,32 +482,32 @@ CODE:
 			RegCloseKey(hk);
 			XSRETURN_NO;
 		    }
+                }
 
-		    if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER
-				       | FORMAT_MESSAGE_FROM_HMODULE
-				       | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				       dll, id2, 0, (LPWSTR)&wMsgBuf, 0,
-				       (va_list*)&wstrings[j]) == 0)
-		    {
-			FreeLibrary(dll);
-			RegCloseKey(hk);
-			XSRETURN_NO;
-		    }
+                if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER
+                                   | FORMAT_MESSAGE_FROM_HMODULE
+                                   | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+                                   dll, id2, 0, (LPWSTR)&wMsgBuf, 0,
+                                   (va_list*)&wstrings[j]) == 0)
+                {
+                    FreeLibrary(dll);
+                    RegCloseKey(hk);
+                    XSRETURN_NO;
+                }
 
-		    percentLen = 2;	/* for %% */
-		    do {
-			percentLen++;
-		    } while (id2/=10);	/* compute length of %%xxx string */
+                percentLen = 2;	/* for %% */
+                do {
+                    percentLen++;
+                } while (id2/=10);	/* compute length of %%xxx string */
 
-		    msgLen = wcslen(wMsgBuf);
-		    Newz(0, tmpx, wcslen(wstrings[j])+msgLen-percentLen+1, WCHAR);
-		    wcsncpy(tmpx, wstrings[j], percent-wstrings[j]);
-		    wcsncat(tmpx, wMsgBuf,
-			    msgLen - ((wcscmp(wMsgBuf+msgLen-2, L"\r\n")==0) ? 2 : 0));
-		    wcscat(tmpx, percent+percentLen);
-		    wstrings[j] = tmpx;
-		    LocalFree(wMsgBuf);
-		}
+                msgLen = wcslen(wMsgBuf);
+                Newz(0, tmpx, wcslen(wstrings[j])+msgLen-percentLen+1, WCHAR);
+                wcsncpy(tmpx, wstrings[j], percent-wstrings[j]);
+                wcsncat(tmpx, wMsgBuf,
+                        msgLen - ((wcscmp(wMsgBuf+msgLen-2, L"\r\n")==0) ? 2 : 0));
+                wcscat(tmpx, percent+percentLen);
+                wstrings[j] = tmpx;
+                LocalFree(wMsgBuf);
 	    }
 	}
 
@@ -541,6 +543,7 @@ CODE:
 	    if (wstrings[j] < wlongstring || wstrings[j] >= wlongstring+length)
 		Safefree(wstrings[j]);
 	Safefree(wlongstring);
+        Safefree(wstrings);
 
 	if (!result || !wMsgBuf) {
 	    FreeLibrary(dll);
@@ -558,7 +561,7 @@ CODE:
     }
     else {
 	static const char *EVFILE[] = {"System", "Security", "Application"};
-	char *MsgBuf, *strings[16], *ptr, *tmpx;
+	char *MsgBuf, **strings, *ptr, *tmpx;
 	char msgfile[MAX_PATH], regPath[MAX_PATH];
 	DWORD i, id2;
 	BOOL result;
@@ -566,6 +569,8 @@ CODE:
 	unsigned short j;
 	char *percent;
 	int percentLen, msgLen, gotPercent;
+
+        New(0, strings, numstrings+1, char*);
 
 	/* Which EventLog are we reading? */
 	for (j=0; j < (sizeof(EVFILE)/sizeof(EVFILE[0])); j++) {
@@ -617,34 +622,34 @@ CODE:
 			RegCloseKey(hk);
 			XSRETURN_NO;
 		    }
+                }
 
-		    if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER
-				       | FORMAT_MESSAGE_FROM_HMODULE
-				       | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-				       dll, id2, 0, (LPSTR)&MsgBuf, 0,
-				       (va_list*)&strings[j]) == 0)
-		    {
-			FreeLibrary(dll);
-			RegCloseKey(hk);
-			XSRETURN_NO;
-		    }
+                if (FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER
+                                   | FORMAT_MESSAGE_FROM_HMODULE
+                                   | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+                                   dll, id2, 0, (LPSTR)&MsgBuf, 0,
+                                   (va_list*)&strings[j]) == 0)
+                {
+                    FreeLibrary(dll);
+                    RegCloseKey(hk);
+                    XSRETURN_NO;
+                }
 
-		    percentLen = 2;	/* for %% */
-		    do {
-			percentLen++;
-		    } while (id2/=10);	/* compute length of %%xxx string */
+                percentLen = 2;	/* for %% */
+                do {
+                    percentLen++;
+                } while (id2/=10);	/* compute length of %%xxx string */
 
-		    msgLen = strlen(MsgBuf);
-		    Newz(0, tmpx, strlen(strings[j])+msgLen-percentLen+1, char);
-		    strncpy(tmpx, strings[j], percent-strings[j]);
-		    strncat(tmpx, MsgBuf,
-			    msgLen - ((strcmp(MsgBuf+msgLen-2, "\r\n")==0) ? 2 : 0));
-		    strcat(tmpx, percent+percentLen);
-		    if (gotPercent)
-			Safefree(strings[j]);
-		    strings[j] = tmpx;
-		    LocalFree(MsgBuf);
-		}
+                msgLen = strlen(MsgBuf);
+                Newz(0, tmpx, strlen(strings[j])+msgLen-percentLen+1, char);
+                strncpy(tmpx, strings[j], percent-strings[j]);
+                strncat(tmpx, MsgBuf,
+                        msgLen - ((strcmp(MsgBuf+msgLen-2, "\r\n")==0) ? 2 : 0));
+                strcat(tmpx, percent+percentLen);
+                if (gotPercent)
+                    Safefree(strings[j]);
+                strings[j] = tmpx;
+                LocalFree(MsgBuf);
 	    }
 	}
 
@@ -678,6 +683,8 @@ CODE:
 	for (j=0; j<=numstrings; j++)
 	    if (strings[j] < longstring || strings[j] >= longstring+length)
 		Safefree(strings[j]);
+
+        Safefree(strings);
 
         if (!result || !MsgBuf) {
 	    FreeLibrary(dll);

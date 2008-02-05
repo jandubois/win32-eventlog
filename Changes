@@ -1,5 +1,9 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.071 Fri Aug 25 12:34:56 2000
+    - remove limit of 16 fields for GetEventLogText
+    - fix endless loop problem in GetEventLogText
+
 0.07  Mon May 22 21:02:26 2000
     - support for passing Unicode strings to underlying calls (thanks
       to Jan Dubois <jand@activestate.com>)
