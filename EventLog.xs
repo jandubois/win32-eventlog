@@ -289,7 +289,7 @@ OUTPUT:
 
 bool
 ReadEventLog(handle,Flags,Record,evtHeader,sourceName,computerName,sid,data,strings)
-    U32 handle
+    size_t handle
     DWORD Flags
     DWORD Record
     char *evtHeader = NO_INIT
@@ -908,7 +908,7 @@ OUTPUT:
 
 bool
 OpenBackupEventLog(hEventLog,lpszUNCServerName,lpszFileName)
-    U32       hEventLog = 0;
+    size_t       hEventLog = 0;
     char *    lpszUNCServerName
     char *    lpszFileName
 CODE:
@@ -934,7 +934,7 @@ CODE:
 	lpEvtLog->CurEntryNum   = 0;
 	lpEvtLog->CurEntry      = NULL;
 	lpEvtLog->Flags         = 0;
-	hEventLog = (U32)lpEvtLog;
+	hEventLog = (size_t)lpEvtLog;
 	RETVAL = TRUE;
     }
     else {
@@ -950,7 +950,7 @@ OUTPUT:
 
 bool
 OpenEventLog(hEventLog,lpszUNCServerName,lpszSourceName)
-    U32       hEventLog = 0;
+    size_t       hEventLog = 0;
     char *    lpszUNCServerName
     char *    lpszSourceName
 CODE:
@@ -976,7 +976,7 @@ CODE:
 	lpEvtLog->CurEntryNum   = 0;
 	lpEvtLog->CurEntry      = NULL;
 	lpEvtLog->Flags         = 0;
-	hEventLog = (U32)lpEvtLog;
+	hEventLog = (size_t)lpEvtLog;
 	RETVAL = TRUE;
     }
     else {
