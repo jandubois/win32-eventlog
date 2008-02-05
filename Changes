@@ -1,6 +1,12 @@
 Revision history for Perl extension Win32::EventLog.
 
-0.062 (unreleased)
+0.07  Mon May 22 21:02:26 2000
+    - support for passing Unicode strings to underlying calls (thanks
+      to Jan Dubois <jand@activestate.com>)
+    - various other cleanups for the code and the documentation
+      (Jan Dubois <jand@activestate.com>)
+
+0.062 Mon May 22 21:02:26 2000
     - fix for memory leak in EventLog due to lack of DESTROY()
       (suggested by Jan Dubois <jand@activestate.com>)
     - Report() method uses 'Source' and 'Computer' fields in passed
