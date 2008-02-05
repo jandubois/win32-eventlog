@@ -2,7 +2,7 @@ Revision history for Perl extension Win32::EventLog.
 
 0.062 (unreleased)
     - fix for memory leak in EventLog due to lack of DESTROY()
-      (suggested by Jan Dubois <jan.dubois@ibm.net>)
+      (suggested by Jan Dubois <jand@activestate.com>)
     - Report() method uses 'Source' and 'Computer' fields in passed
       hashref if they exist, and uses the same fields from the EventLog
       object if they don't.  NOTE: THIS IS A POTENTIAL COMPATIBILITY
