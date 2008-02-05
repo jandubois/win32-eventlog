@@ -1,5 +1,10 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.074 (unreleased)
+    - EventLog can sometimes fail to retrieve messages (fix suggested
+      by Patrice M. I. Parmentier in
+      http://rt.perl.org/rt2/Ticket/Display.html?id=17457)
+
 0.073 Fri May 17 2002 (Brett Williams <brett@black-mamba.com>)
 
     - fix for incorrect number of parameters passed from method

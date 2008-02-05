@@ -478,6 +478,7 @@ CODE:
                                FORMAT_MESSAGE_IGNORE_INSERTS,
                                dll, id, 0, (LPWSTR)&wmessage, 0, NULL);
                 FreeLibrary(dll);
+		dll = NULL;
             }
             ptr = semi;
         }
@@ -576,8 +577,10 @@ CODE:
 	}
 
         RegCloseKey(hk);
-        if (dll)
+        if (dll) {
 	    FreeLibrary(dll); /* in case it was used above */
+	    dll = NULL;
+	}
 
 	/* XXX 'strings' argument may be broken on 64-bit
 	     * platforms since the documentation says 32-bit
@@ -598,7 +601,6 @@ CODE:
         Safefree(wstrings);
 
 	if (!result || !wMsgBuf) {
-	    FreeLibrary(dll);
 	    XSRETURN_NO;
 	}
 	length = (wcslen(wMsgBuf)+1)*2;
@@ -664,6 +666,7 @@ CODE:
                                FORMAT_MESSAGE_IGNORE_INSERTS,
                                dll, id, 0, (LPSTR)&message, 0, NULL);
                 FreeLibrary(dll);
+		dll = NULL;
             }
             ptr = semi;
         }
@@ -759,8 +762,10 @@ CODE:
 	}
 
         RegCloseKey(hk);
-	if (dll)
+	if (dll) {
 	    FreeLibrary(dll); /* in case it was used above */
+	    dll = NULL;
+	}
 
 	/* XXX 'strings' argument may be broken on 64-bit
 	     * platforms since the documentation says 32-bit
