@@ -9,7 +9,7 @@ package Win32::EventLog;
 
 use strict;
 use vars qw($VERSION $AUTOLOAD @ISA @EXPORT $GetMessageText);
-$VERSION = '0.072';
+$VERSION = '0.073';
 
 require Exporter;
 require DynaLoader;
@@ -42,7 +42,7 @@ sub AUTOLOAD {
     my($constname);
     ($constname = $AUTOLOAD) =~ s/.*:://;
     # reset $! to zero to reset any current errors.
-    $!=0;
+    local $! = 0;
     my $val = constant($constname, @_ ? $_[0] : 0);
     if ($!) {
 	if ($! =~ /Invalid/) {
@@ -197,7 +197,7 @@ sub Report {
                                                 : $self->{Source};
 
     return WriteEventLog($computer, $source, $EventInfo->{EventType},
-			 $EventInfo->{Category}, $EventInfo->{EventID},
+			 $EventInfo->{Category}, $EventInfo->{EventID}, 0,
 			 $EventInfo->{Data}, split(/\0/, $EventInfo->{Strings}));
 
 }

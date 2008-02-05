@@ -237,11 +237,11 @@ CODE:
 	hLog = RegisterEventSourceA(server, source);
     }
     if (hLog != NULL) {
-	data = SvPV(ST(5), dataLength);
+	data = SvPV(ST(6), dataLength);
 	if (USING_WIDE()) {
-	    New(3101, warray, items - 6, LPWSTR);
-	    for (index = 0; index < items - 6; ++index) {
-		buffer = SvPV(ST(index+6), bufLength);
+	    New(3101, warray, items - 7, LPWSTR);
+	    for (index = 0; index < items - 7; ++index) {
+		buffer = SvPV(ST(index+7), bufLength);
 		New(0, pwChar, bufLength+1, WCHAR);
 		A2WHELPER(buffer, pwChar, (bufLength+1)*sizeof(WCHAR));
 		warray[index] = pwChar;
@@ -252,20 +252,20 @@ CODE:
                 SvIV(ST(3)),           /* event category */
                 SvIV(ST(4)),           /* event identifier */
                 NULL,                  /* user security identifier (optional) */
-                items - 6,             /* number of strings to merge with message */
+                items - 7,             /* number of strings to merge with message */
                 dataLength,            /* size of raw (binary) data (in bytes) */
                 (const WCHAR**)warray, /* array of strings to merge with message */
                 data                   /* address of binary data */
 		);
-	    for (index = 0; index < items - 6; ++index) {
+	    for (index = 0; index < items - 7; ++index) {
 		Safefree(warray[index]);
 	    }
 	    Safefree(warray);
 	}
 	else {
-	    New(3101, array, items - 6, char*);
-	    for (index = 0; index < items - 6; ++index) {
-		buffer = SvPV(ST(index+6), bufLength);
+	    New(3101, array, items - 7, char*);
+	    for (index = 0; index < items - 7; ++index) {
+		buffer = SvPV(ST(index+7), bufLength);
 		array[index] = buffer;
 	    }
 	    RETVAL = ReportEventA(
@@ -274,7 +274,7 @@ CODE:
                 SvIV(ST(3)),         /* event category */
                 SvIV(ST(4)),         /* event identifier */
                 NULL,                /* user security identifier (optional) */
-                items - 6,           /* number of strings to merge with message */
+                items - 7,           /* number of strings to merge with message */
                 dataLength,          /* size of raw (binary) data (in bytes) */
                 (const char**)array, /* array of strings to merge with message */
                 data                 /* address of binary data */

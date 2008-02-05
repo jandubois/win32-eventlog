@@ -1,5 +1,12 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.073 Fri May 17 2002 (Brett Williams <brett@black-mamba.com>)
+
+    - fix for incorrect number of parameters passed from method
+      Win32::EventLog::Report to method Win32::EventLog::WriteEventLog
+    - fix for method Win32::EventLog::WriteEventLog ignoring 'reserved'
+      parameter
+
 0.072 Tue Aug 14 2001 (Jan Dubois)
     - GetEventLogText fixes:
       - EventMessageFile can actually be a *list* of files
