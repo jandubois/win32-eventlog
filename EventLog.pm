@@ -1,22 +1,22 @@
-package Win32::EventLog;
-
-#EventLog.pm
-#Creates an object oriented interface to the Windows NT Evenlog 
-#Written by Jesse Dougherty
+#
+# EventLog.pm
+#
+# Creates an object oriented interface to the Windows NT Evenlog 
+# Written by Jesse Dougherty
 #
 
-$VERSION = '0.01';
+package Win32::EventLog;
+
+$VERSION = $VERSION = '0.02';
 
 require Exporter;
 require DynaLoader;
 #use Win32;
 
-die "The Win32::Eventlog module works only on Windows NT" if(!Win32::IsWinNT() );
+die "The Win32::Eventlog module works only on Windows NT"
+	unless Win32::IsWinNT();
 
 @ISA= qw( Exporter DynaLoader );
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
 @EXPORT = qw(
 	EVENTLOG_AUDIT_FAILURE
 	EVENTLOG_AUDIT_SUCCESS
@@ -36,13 +36,9 @@ die "The Win32::Eventlog module works only on Windows NT" if(!Win32::IsWinNT() )
 );
 
 sub AUTOLOAD {
-    # This AUTOLOAD is used to 'autoload' constants from the constant()
-    # XS function.  If a constant is not found then control is passed
-    # to the AUTOLOAD in AutoLoader.
-
     my($constname);
     ($constname = $AUTOLOAD) =~ s/.*:://;
-    #reset $! to zero to reset any current errors.
+    # reset $! to zero to reset any current errors.
     $!=0;
     my $val = constant($constname, @_ ? $_[0] : 0);
     if ($! != 0) {
@@ -51,8 +47,8 @@ sub AUTOLOAD {
 	    goto &AutoLoader::AUTOLOAD;
 	}
 	else {
-	    ($pack,$file,$line) = caller;
-	    die "Your vendor has not defined Win32::EventLog macro $constname, used at $file line $line.";
+	    my ($pack,$file,$line) = caller;
+	    die "Unknown Win32::EventLog macro $constname, at $file line $line.\n";
 	}
     }
     eval "sub $AUTOLOAD { $val }";
@@ -60,205 +56,187 @@ sub AUTOLOAD {
 }
 
 
-#Open
-#this method serves as a class constructor for the EventLog class.
-#Note:
 #
+# new()
 #
-#               Win32::EventLog::Open($this, "source name", "ServerName");
+#   Win32::EventLog->new("source name", "ServerName");
 #
-sub Open
+sub new
 {
-	if($#_ < 1){
-		die "usage: Open(\$this, \$sourcename[, \$servername])\n";
-	}
+    my $c = shift;
+    die "usage: PACKAGE->new(SOURCENAME[, SERVERNAME])\n" unless @_;
+    my $source = shift;
+    my $server = shift;
+    my $handle;
 
-	my ($SourceName, $ServerName)=($_[1],$_[2]);
-	my ($handle);
+    # Create new handle
+    OpenEventLog($handle, $server, $source);
+    return bless  {'handle' => $handle,
+		   'Source' => $source,
+		   'Computer' => $server }, $c;
+}
 
-	#Set the handle for this object.
-
-
-	OpenEventLog($handle, $ServerName, $SourceName);
-	$_[0] = {'handle' => $handle,
-		'Source' => $SourceName,
-		'Computer' => $ServerName };
-
-	bless $_[0];
+#
+# Open (the rather braindead old way)
+# A variable initialized to empty must be supplied as the first
+# arg, followed by whatever new() takes
+#
+sub Open {
+    $_[0] = Win32::EventLog->new($_[1],$_[2]);
 }
 
 sub Backup
 {
-	$self = shift;
-	if($#_ != 0){
-		die " usage: Backup(Filename)\n";
-	}
-	local( $FileName )= @_;
-	local ($Result);
+    $self = shift;
+    die " usage: OBJECT->Backup(FILENAME)\n" unless @_ == 1;
+    my $filename = shift;
+    my $result;
 
-	$Result = BackupEventLog($self->{'handle'},$FileName);
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
-
-	return($Result);
-
+    $result = BackupEventLog($self->{'handle'},$filename);
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
 
-#Read
+# Read
 # Note: the EventInfo arguement requires a hash reference.
 sub Read
 {
-	$self = shift;
-	if($#_ != 2){
-		die "usage: Read(flags, RecordOffSet, hashref)\n";
-	}
-	local( $ReadFlags,$RecordOffSet)=@_;
-	local ($Result);
-	local ($datalength, $dataoffset, $sid);
-	local ($length, $reserved, $recordnumber, $timegenerated, $timewritten, $eventid);
-	local ($eventtype, $numstrings, $eventcategory, $reservedflags);
-	local ($closingrecordnumber, $stringoffset, $usersidlength, $usersidoffset);
+    $self = shift;
 
-#The following is stolen shamelessly from Wyt's tests for the registry. 
+    die "usage: OBJECT->Read(FLAGS, RECORDOFFSET, HASHREF)\n" unless @_ == 3;
 
-	$Result = ReadEventLog( $self->{'handle'}, $ReadFlags,
-	$RecordOffSet, $header, $source, $computer, $sid, $data, $strings );
+    my ($readflags,$recordoffset) = @_;
+    my ($result, $datalength, $dataoffset, $sid, $length);
+    my ($reserved, $recordnumber, $timegenerated, $timewritten, $eventid);
+    my ($eventtype, $numstrings, $eventcategory, $reservedflags);
+    my ($closingrecordnumber, $stringoffset, $usersidlength, $usersidoffset);
 
-	( $length, $reserved, $recordnumber, $timegenerated, $timewritten, $eventid,
-		  $eventtype, $numstrings, $eventcategory, $reservedflags,
-		  $closingrecordnumber, $stringoffset, $usersidlength, $usersidoffset,
-		  $datalength, $dataoffset ) = unpack( 'l6s4l6', $header );
+    # The following is stolen shamelessly from Wyt's tests for the registry. 
 
-#make a hash out of the values returned from ReadEventLog.
+    $result = ReadEventLog($self->{'handle'},
+			   $readflags,
+			   $recordoffset,
+			   $header,
+			   $source,
+			   $computer,
+			   $sid,
+			   $data,
+			   $strings);
 
-	$_[2]={         'Source'    =>          $source,
-				'Computer'  =>          $computer,
-				'Length'        =>              $datalength,
-				'Category' =>   $eventcategory,
-				'RecordNumber' =>       $recordnumber,
-				'TimeGenerated' =>      $timegenerated,
-				'Timewritten' =>        $timewritten,
-				'EventID' =>            $eventid,
-				'EventType' =>          $eventtype,
-				'ClosingRecordNumber' => $closingrecordnumber,
-				'Strings' =>            $strings,
-				'Data'  =>                      $data,
-			};
+    ($length,
+     $reserved,
+     $recordnumber,
+     $timegenerated,
+     $timewritten,
+     $eventid,
+     $eventtype,
+     $numstrings,
+     $eventcategory,
+     $reservedflags,
+     $closingrecordnumber,
+     $stringoffset,
+     $usersidlength,
+     $usersidoffset,
+     $datalength,
+     $dataoffset) = unpack('l6s4l6', $header);
 
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
+    # make a hash out of the values returned from ReadEventLog.
 
-	return($Result);
+    $_[2] = { 'Source'			=> $source,
+	      'Computer'		=> $computer,
+	      'Length'			=> $datalength,
+	      'Category'		=> $eventcategory,
+	      'RecordNumber'		=> $recordnumber,
+	      'TimeGenerated'		=> $timegenerated,
+	      'Timewritten'		=> $timewritten,
+	      'EventID'			=> $eventid,
+	      'EventType'		=> $eventtype,
+	      'ClosingRecordNumber'	=> $closingrecordnumber,
+	      'Strings'			=> $strings,
+	      'Data'			=> $data,
+	    };
 
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
 
 sub Report
 {
-	my $self = shift;
-	
-	if($#_ != 0){
-		die "usage: Report( %Event )\n";
-	}
+    my $self = shift;
+    
+    die "usage: OBJECT->Report( HASHREF )\n" unless @_ == 1;
 
-	local( $EventInfo )= @_;
-	local ($Result);
+    my $EventInfo = shift;
+    my $result;
 
-	if( ref( $EventInfo)  eq "HASH" ){
+    if ( ref( $EventInfo)  eq "HASH" ) {
+	my ($length, $reserved, $recordnumber, $timegenerated, $timewritten);
+	my ($eventid, $eventtype, $numstrings, $eventcategory, $reservedflags);
+	my ($closingrecordnumber, $stringoffset, $usersidlength);
+	my ($usersidoffset, $source, $data, $strings);
 
-		local ($length, $reserved, $recordnumber, $timegenerated, $timewritten, $eventid);
-		local ($eventtype, $numstrings, $eventcategory, $reservedflags);
-		local ($closingrecordnumber, $stringoffset, $usersidlength, $usersidoffset);
-		local ($source, $reserved, $data, $strings);
-	
-		$eventcategory = $EventInfo->{'Category'};
-		$source=$self->{'Source'};
-		$computer=$self->{'Computer'};
-		$length=$EventInfo->{'Length'};
-		$recordnumber=$EventInfo->{'RecordNumber'};
-		$timegenerated=$EventInfo->{'TimeGenerated'};
-		$timewritten=$EventInfo->{'Timewritten'};
-		$eventid =$EventInfo->{'EventID'};
-		$eventtype=$EventInfo->{'EventType'};
-		$closingrecordnumber=$EventInfo->{'ClosingRecordNumber'};
-		$strings=$EventInfo->{'Strings'};
-		$data=$EventInfo->{'Data'};
+	$eventcategory		= $EventInfo->{'Category'};
+	$source			= $self->{'Source'};
+	$computer		= $self->{'Computer'};
+	$length			= $EventInfo->{'Length'};
+	$recordnumber		= $EventInfo->{'RecordNumber'};
+	$timegenerated		= $EventInfo->{'TimeGenerated'};
+	$timewritten		= $EventInfo->{'Timewritten'};
+	$eventid		= $EventInfo->{'EventID'};
+	$eventtype		= $EventInfo->{'EventType'};
+	$closingrecordnumber	= $EventInfo->{'ClosingRecordNumber'};
+	$strings		= $EventInfo->{'Strings'};
+	$data			= $EventInfo->{'Data'};
 
-		$Result = WriteEventLog( $computer,$source, $eventtype, $eventcategory, $eventid, $reserved, $data, $strings);
+	$result = WriteEventLog($computer,
+				$source,
+				$eventtype,
+				$eventcategory,
+				$eventid,
+				$reserved,
+				$data,
+				$strings);
+    } 
+    else {
+	die "Win32::EventLog::Report requires a hash reference as arg 3\n";
+    }
 
-		} 
-		else{
-			die "Win32::EventLog::Report requires a hash reference as arg 3\n";
-		}
-
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
-
-	return($Result);
-
-
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
 
 sub GetOldest
 {
-	my $self=shift;
-	local ($Result);
-		
-	if($#_ != 0){
-		die "usage: GetOldest( $scalaref )\n";
-	}
-
-	$Result = GetOldestEventLogRecord( $self->{'handle'},$_[0]);
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
-
-	return($Result);
-
+    my $self=shift;
+	    
+    die "usage: OBJECT->GetOldest( SCALAREF )\n" unless @_ == 1;
+    my $result = GetOldestEventLogRecord( $self->{'handle'},$_[0]);
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
 
 sub GetNumber
 {
-	my $self=shift;
-	local ($Result);
+    my $self=shift;
 
-	if($#_ != 0){
-		die "usage: GetNumber( $scalaref )\n";
-	}
-
-	$Result = GetNumberOfEventLogRecords($self->{'handle'}, $_[0]);
-
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
-
-	return($Result);
-
-	
+    die "usage: OBJECT->GetNumber( SCALARREF )\n" unless @_ == 1;
+    my $result = GetNumberOfEventLogRecords($self->{'handle'}, $_[0]);
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
+
 sub Clear
 {
-	my $self=shift;
-	local ($Result);
-	if($#_ != 0){
-		die "usage: Clear( $FileName )\n";
-	}
-	local( $filename) = @_;
+    my $self=shift;
 
-	$Result = ClearEventLog($self->{'handle'}, $filename);
-
-	if(!$Result){
-		$!=Win32::GetLastError();
-	}
-
-	return($Result);
-
+    die "usage: OBJECT->Clear( FILENAME )\n" unless @_ == 1;
+    my $filename = shift;
+    my $result = ClearEventLog($self->{'handle'}, $filename);
+    unless ($result) { $! = Win32::GetLastError() }
+    return $result;
 }
 
 bootstrap Win32::EventLog;
-
 
 1;
 __END__

@@ -8,37 +8,12 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#define BUFFER_SIZE 1024
-#define CROAK croak
-
-#define TMPBUFSZ 1024
-
-#define SUCCESSRETURNED(x)    (x == ERROR_SUCCESS)
-#define REGRETURN(x) XSRETURN_IV(SUCCESSRETURNED(x))
-
 
 #define SETIV(index,value) sv_setiv(ST(index), value)
 #define SETPV(index,string) sv_setpv(ST(index), string)
 #define SETPVN(index, buffer, length) sv_setpvn(ST(index), (char*)buffer, length)
-#define SETHKEY(index, hkey)    SETIV(index,(long)hkey)
 
 #define NEW(x,v,n,t)  (v = (t*)safemalloc((MEM_SIZE)((n) * sizeof(t))))
-#define PERLSvIV(sv) (SvIOK(sv) ? SvIVX(sv) : sv_2iv(sv))
-#define PERLSvPV(sv, lp) (SvPOK(sv) ? ((lp = SvCUR(sv)), SvPVX(sv)) : sv_2pv(sv, &lp))
-
-#define SvHKEY(index) (HKEY)((unsigned long) PERLSvIV(index))
-
-#define PERLPUSHMARK(p) if (++markstack_ptr == markstack_max)    \
-            markstack_grow();            \
-            *markstack_ptr = (p) - stack_base
-
-#define PERLXPUSHs(s)    do {\
-         if (stack_max - sp < 1) {\
-                sp = stack_grow(sp, sp, 1);\
-            }\
-  (*++sp = (s)); } while (0)
-
-#define PERLADVAPI WINAPI
 
 /* Modified calls go here. */
 
@@ -243,17 +218,17 @@ WriteEventLog(server, source, eventType, category, eventID, reserved, data, ...)
 		server = NULL;
 
 	    if ((hLog = RegisterEventSource(server, source)) != NULL) {
-		data = PERLSvPV(ST(6), dataLength);
+		data = SvPV(ST(6), dataLength);
 		NEW(3101, array, items - 7, char*);
 		for(index = 0; index < items - 7; ++index) {
-		    buffer = PERLSvPV(ST(index+7), bufLength);
+		    buffer = SvPV(ST(index+7), bufLength);
 		    array[index] = buffer;
 		}
 		if(ReportEvent(
 		    hLog,        	/* handle returned by RegisterEventSource */
-		    PERLSvIV(ST(2)),    /* event type to log */
-		    PERLSvIV(ST(3)),    /* event category */
-		    PERLSvIV(ST(4)),    /* event identifier */
+		    SvIV(ST(2)),    /* event type to log */
+		    SvIV(ST(3)),    /* event category */
+		    SvIV(ST(4)),    /* event identifier */
 		    NULL,               /* user security identifier (optional) */
 		    items - 7,          /* number of strings to merge with message */
 		    dataLength,         /* size of raw (binary) data (in bytes) */
@@ -483,11 +458,11 @@ OpenEventLog(hEventLog,lpszUNCServerName,lpszSourceName)
 	    RETVAL = FALSE;
 	    if ((lpEvtLog->hLog = OpenEventLog(lpszUNCServerName,lpszSourceName))) {
 		/* return info... */
-		lpEvtLog->dwID                  = EVTLOGID;
+		lpEvtLog->dwID          = EVTLOGID;
 		lpEvtLog->NumEntries    = 0;
 		lpEvtLog->CurEntryNum   = 0;
-		lpEvtLog->CurEntry              = NULL;
-		lpEvtLog->Flags                 = 0;
+		lpEvtLog->CurEntry      = NULL;
+		lpEvtLog->Flags         = 0;
 		hEventLog = (U32)lpEvtLog;
 		RETVAL = TRUE;
 	    }

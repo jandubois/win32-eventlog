@@ -1,7 +1,7 @@
 Changes
 EventLog.pm
 EventLog.xs
-Makefile.PL
 MANIFEST
-typemap
+Makefile.PL
 t/eventlog.t
+typemap
