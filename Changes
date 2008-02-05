@@ -1,5 +1,8 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.04  Mon Sep  7 22:41:27 1998
+	- grow buffer for ReadEventLog() as needed
+
 0.03  Fri Feb  6 20:54:54 1998
 	- Fix Read(...,\%foo)
 

@@ -13,21 +13,19 @@
 #define SETPV(index,string) sv_setpv(ST(index), string)
 #define SETPVN(index, buffer, length) sv_setpvn(ST(index), (char*)buffer, length)
 
-#define NEW(x,v,n,t)  (v = (t*)safemalloc((MEM_SIZE)((n) * sizeof(t))))
-
 /* Modified calls go here. */
 
 /* Revamped ReportEvent that doesn't use SIDs. */
 typedef struct _EvtLogCtlBuf
 {
-    DWORD  dwID;                    /* id for mem block */
-    HANDLE hLog;                    /* event log handle */
-    LPBYTE BufPtr;                    /* pointer to data buffer */
-    DWORD  BufLen;                    /* size of buffer */
-    DWORD  NumEntries;                /* number of entries in buffer */
-    DWORD  CurEntryNum;                /* next entry to return */
-    EVENTLOGRECORD *CurEntry;        /* point to next entry to return */
-    DWORD  Flags;                    /* read flags for ReadEventLog */
+    DWORD  dwID;			/* id for mem block */
+    HANDLE hLog;			/* event log handle */
+    LPBYTE BufPtr;			/* pointer to data buffer */
+    DWORD  BufLen;			/* size of buffer */
+    DWORD  NumEntries;			/* number of entries in buffer */
+    DWORD  CurEntryNum;			/* next entry to return */
+    EVENTLOGRECORD *CurEntry;		/* point to next entry to return */
+    DWORD  Flags;			/* read flags for ReadEventLog */
 } EvtLogCtlBuf, *lpEvtLogCtlBuf;
 
 #define EVTLOGBUFSIZE 1024
@@ -219,12 +217,12 @@ WriteEventLog(server, source, eventType, category, eventID, reserved, data, ...)
 
 	    if ((hLog = RegisterEventSource(server, source)) != NULL) {
 		data = SvPV(ST(6), dataLength);
-		NEW(3101, array, items - 7, char*);
-		for(index = 0; index < items - 7; ++index) {
+		New(3101, array, items - 7, char*);
+		for (index = 0; index < items - 7; ++index) {
 		    buffer = SvPV(ST(index+7), bufLength);
 		    array[index] = buffer;
 		}
-		if(ReportEvent(
+		if (ReportEvent(
 		    hLog,        	/* handle returned by RegisterEventSource */
 		    SvIV(ST(2)),    /* event type to log */
 		    SvIV(ST(3)),    /* event category */
@@ -263,28 +261,37 @@ ReadEventLog(handle,Flags,Record,evtHeader,sourceName,computerName,sid,data,stri
 	    RETVAL = FALSE;
 	    
 	    lpEvtLog = SVE(handle);
-	    if((lpEvtLog != NULL) && (lpEvtLog->dwID == EVTLOGID)) {
+	    if ((lpEvtLog != NULL) && (lpEvtLog->dwID == EVTLOGID)) {
 		DWORD NumRead, Required;
 		long retval;
-		if(Flags != lpEvtLog->Flags) {
+		if (Flags != lpEvtLog->Flags) {
 		    /* Reset to new read mode & force a re-read call */
 		    lpEvtLog->Flags      = Flags;
 		    lpEvtLog->NumEntries = 0;
 		}
-		if((lpEvtLog->NumEntries == 0) || (Record != 0)) {
-		    if(ReadEventLog(lpEvtLog->hLog, Flags, Record, lpEvtLog->BufPtr,
-				    lpEvtLog->BufLen, &NumRead, &Required)) {
+		if ((lpEvtLog->NumEntries == 0) || (Record != 0)) {
+		redo_read:
+		    if (ReadEventLog(lpEvtLog->hLog, Flags, Record,
+				    lpEvtLog->BufPtr, lpEvtLog->BufLen,
+				    &NumRead, &Required))
+		    {
 			lpEvtLog->NumEntries = NumRead;
 		    }
 		    else {
 			lpEvtLog->NumEntries = 0;
-			GetLastError();
+			if (Required > lpEvtLog->BufLen
+			    && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+			{
+			    lpEvtLog->BufLen = Required*2;
+			    Renew(lpEvtLog->BufPtr, lpEvtLog->BufLen, BYTE);
+			    goto redo_read;
+			}
 		    }
 		    lpEvtLog->CurEntryNum = 0;
 		    lpEvtLog->CurEntry    = (EVENTLOGRECORD*)lpEvtLog->BufPtr;
 		}
 
-		if(lpEvtLog->CurEntryNum < lpEvtLog->NumEntries) {
+		if (lpEvtLog->CurEntryNum < lpEvtLog->NumEntries) {
 		    char *name;
 		    EVENTLOGRECORD *LogBuf;
 		    LogBuf = lpEvtLog->CurEntry;        
@@ -300,7 +307,7 @@ ReadEventLog(handle,Flags,Record,evtHeader,sourceName,computerName,sid,data,stri
 		    /* to next entry in buffer */
 		    lpEvtLog->CurEntryNum += LogBuf->Length;
 		    lpEvtLog->CurEntry = (EVENTLOGRECORD*)(((LPBYTE)LogBuf) + LogBuf->Length);
-		    if(lpEvtLog->CurEntryNum == lpEvtLog->NumEntries) {
+		    if (lpEvtLog->CurEntryNum == lpEvtLog->NumEntries) {
 			lpEvtLog->NumEntries  = 0;
 			lpEvtLog->CurEntryNum = 0;
 			lpEvtLog->CurEntry    = NULL;
@@ -343,7 +350,7 @@ ClearEventLog(hEventLog,lpszBackupFileName)
 		ClearEventLog(lpEvtLog->hLog, lpszBackupFileName) &&
 		CloseEventLog(lpEvtLog->hLog))
 	    {
-		if(lpEvtLog->BufPtr)
+		if (lpEvtLog->BufPtr)
 		    Safefree(lpEvtLog->BufPtr);
 		Safefree(lpEvtLog);
 		RETVAL = TRUE;
@@ -362,7 +369,7 @@ CloseEventLog(hEventLog)
 	    if ((lpEvtLog != NULL) && (lpEvtLog->dwID == EVTLOGID) &&
 		CloseEventLog(lpEvtLog->hLog))
 	    {
-		if(lpEvtLog->BufPtr)
+		if (lpEvtLog->BufPtr)
 		    Safefree(lpEvtLog->BufPtr);
 		Safefree(lpEvtLog);
 		RETVAL = TRUE;
@@ -419,9 +426,9 @@ OpenBackupEventLog(hEventLog,lpszUNCServerName,lpszFileName)
     CODE:
 	{
 	    lpEvtLogCtlBuf lpEvtLog;
-	    NEW(1908, lpEvtLog, 1, EvtLogCtlBuf);
+	    New(1908, lpEvtLog, 1, EvtLogCtlBuf);
 	    lpEvtLog->BufLen = EVTLOGBUFSIZE;
-	    NEW(1908, lpEvtLog->BufPtr, lpEvtLog->BufLen, BYTE);
+	    New(1908, lpEvtLog->BufPtr, lpEvtLog->BufLen, BYTE);
 	    RETVAL = FALSE;
 	    if ((lpEvtLog->hLog = OpenBackupEventLog(lpszUNCServerName,lpszFileName))) {
 		/* return info... */
@@ -435,7 +442,7 @@ OpenBackupEventLog(hEventLog,lpszUNCServerName,lpszFileName)
 	    }
 	    else {
 		/* Open failed... */
-		if(lpEvtLog->BufPtr)
+		if (lpEvtLog->BufPtr)
 		    Safefree(lpEvtLog->BufPtr);
 		Safefree(lpEvtLog);
 	    }
@@ -452,9 +459,9 @@ OpenEventLog(hEventLog,lpszUNCServerName,lpszSourceName)
     CODE:
 	{
 	    lpEvtLogCtlBuf lpEvtLog;
-	    NEW(1908, lpEvtLog, 1, EvtLogCtlBuf);
+	    New(1908, lpEvtLog, 1, EvtLogCtlBuf);
 	    lpEvtLog->BufLen = EVTLOGBUFSIZE;
-	    NEW(1908, lpEvtLog->BufPtr, lpEvtLog->BufLen, BYTE);
+	    New(1908, lpEvtLog->BufPtr, lpEvtLog->BufLen, BYTE);
 	    RETVAL = FALSE;
 	    if ((lpEvtLog->hLog = OpenEventLog(lpszUNCServerName,lpszSourceName))) {
 		/* return info... */
@@ -468,7 +475,7 @@ OpenEventLog(hEventLog,lpszUNCServerName,lpszSourceName)
 	    }
 	    else {
 		/* Open failed... */
-		if(lpEvtLog->BufPtr)
+		if (lpEvtLog->BufPtr)
 		    Safefree(lpEvtLog->BufPtr);
 		Safefree(lpEvtLog);
 	    }

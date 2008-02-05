@@ -7,7 +7,7 @@
 
 package Win32::EventLog;
 
-$VERSION = $VERSION = '0.03';
+$VERSION = $VERSION = '0.04';
 
 require Exporter;
 require DynaLoader;
