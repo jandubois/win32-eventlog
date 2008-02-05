@@ -1,18 +1,24 @@
 Revision history for Perl extension Win32::EventLog.
 
-0.071 Fri Aug 25 12:34:56 2000
+0.072 Tue Aug 14 2001 (Jan Dubois)
+    - GetEventLogText fixes:
+      - EventMessageFile can actually be a *list* of files
+      - provide additional bogus inserts to cope with broken
+        message files / eventlog entries
+
+0.071 Fri Aug 25 12:34:56 2000 (Jan Dubois)
     - remove limit of 16 fields for GetEventLogText
     - fix endless loop problem in GetEventLogText
 
 0.07  Mon May 22 21:02:26 2000
     - support for passing Unicode strings to underlying calls (thanks
-      to Jan Dubois <jand@activestate.com>)
+      to Jan Dubois <JanD@ActiveState.com>)
     - various other cleanups for the code and the documentation
-      (Jan Dubois <jand@activestate.com>)
+      (Jan Dubois <JanD@ActiveState.com>)
 
 0.062 Mon May 22 21:02:26 2000
     - fix for memory leak in EventLog due to lack of DESTROY()
-      (suggested by Jan Dubois <jand@activestate.com>)
+      (suggested by Jan Dubois <JanD@ActiveState.com>)
     - Report() method uses 'Source' and 'Computer' fields in passed
       hashref if they exist, and uses the same fields from the EventLog
       object if they don't.  NOTE: THIS IS A POTENTIAL COMPATIBILITY
