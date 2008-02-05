@@ -329,62 +329,120 @@ GetEventLogText(source,id,longstring,numstrings,message)
     CODE:
 	{
 	    static const char *EVFILE[] = { "System", "Security", "Application" };
-	    HINSTANCE dll;
+	    HINSTANCE dll=NULL;
 	    HKEY hk;
-	    char *MsgBuf, *strings[16], *ptr;
-	    char msgfile[MAX_PATH], tmp[MAX_PATH];
-	    DWORD i;
+	    char *MsgBuf, *strings[16], *ptr, *tmpx;
+	    char msgfile[MAX_PATH], regPath[MAX_PATH];
+	    DWORD i, id2;
 	    unsigned short j;
+		char *percent;
+		int percentLen, msgLen, gotPercent;
+		
+		// Which EventLog are we reading?
+	    for (j=0; j < (sizeof(EVFILE)/sizeof(EVFILE[0])); j++) {
+			sprintf(regPath,
+				"SYSTEM\\CurrentControlSet\\Services\\EventLog\\%s\\%s",
+				EVFILE[j], source);
 
-	    for (j=0; j < (sizeof(EVFILE)/sizeof(EVFILE[0])); ++j) {
-		sprintf(tmp,
-			"SYSTEM\\CurrentControlSet\\Services\\EventLog\\%s\\%s",
-			EVFILE[j], source);
-		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, tmp, 0, KEY_READ, &hk)
-		    == ERROR_SUCCESS)
-		{
-		    break;
-		}
+			if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, regPath, 0,
+					KEY_READ, &hk) == ERROR_SUCCESS) {
+				break;
+			}
 	    }
 
 	    if (j >= (sizeof(EVFILE)/sizeof(EVFILE[0]))) {
-		XSRETURN_NO;
+			XSRETURN_NO;
 	    }
 
-	    i = sizeof(tmp);
-	    if (RegQueryValueEx(hk, "EventMessageFile", 0, 0,
-				(unsigned char *)tmp, &i)
-	        != ERROR_SUCCESS)
-	    {
-		XSRETURN_NO;
-	    }
-
-	    RegCloseKey(hk);
-
-	    if (ExpandEnvironmentStrings(tmp, msgfile, sizeof(msgfile)) == 0) {
-		XSRETURN_NO;
-	    }
-	    
-	    dll = LoadLibraryEx(msgfile, 0, LOAD_LIBRARY_AS_DATAFILE);
-	    if (!dll) {
-		XSRETURN_NO;
-	    }
+	    i = sizeof(regPath);	// Fixed
 
 	    ptr = longstring;
-	    for (j=0; j<numstrings; ++j) {
-		strings[j] = ptr;
-		ptr += strlen(ptr)+1;
+	    for (j=0; j<numstrings; j++) {
+			strings[j] = ptr;
+			ptr += strlen(ptr)+1;
+			gotPercent=-1;
+			while ((percent=strchr(strings[j], '%')) &&
+				 sscanf(percent, "%%%%%d", &id2) ==1) {
+				tmpx=(char*)NULL;
+				gotPercent++;
+				if (!dll) {		// first time round - load dll
+					char paramfile[MAX_PATH];
+					
+					if (RegQueryValueEx(hk, "ParameterMessageFile", 0, 0,
+							(unsigned char *)regPath, &i) != ERROR_SUCCESS) {
+						RegCloseKey(hk);
+						XSRETURN_NO;
+					}
+					
+					if (ExpandEnvironmentStrings(regPath, paramfile,
+							sizeof(paramfile)) == 0) {
+						RegCloseKey(hk);
+						XSRETURN_NO;
+					}
+
+					dll = LoadLibraryEx(paramfile, 0, LOAD_LIBRARY_AS_DATAFILE);
+					
+					if (!dll) {
+						RegCloseKey(hk);
+						XSRETURN_NO;
+					}
+				}
+
+				if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
+						| FORMAT_MESSAGE_FROM_HMODULE
+						| FORMAT_MESSAGE_ARGUMENT_ARRAY,
+						dll, id2, 0, (LPTSTR)&MsgBuf, 0, &strings[j]) == 0) {
+					FreeLibrary(dll);
+					RegCloseKey(hk);
+					XSRETURN_NO;
+				}
+				
+				percentLen=2;	// for %%
+				do {
+					percentLen++;
+				} while (id2/=10);	// compute length of %%xxx string	
+
+				msgLen=strlen(MsgBuf);
+				Newz(0, tmpx, strlen(strings[j])+msgLen-percentLen+1, char);
+				strncpy(tmpx, strings[j], percent-strings[j]);
+				strncat(tmpx, MsgBuf,
+						  msgLen - ((strcmp(MsgBuf+msgLen-2, "\r\n")==0) ? 2 : 0));
+				strcat(tmpx, percent+percentLen);
+				if (gotPercent) Safefree(strings[j]);
+				strings[j]=tmpx;
+				LocalFree(MsgBuf);
+			}
+	    }
+	    
+	    if (dll) FreeLibrary(dll); // in case it was used above
+		
+	    if (RegQueryValueEx(hk, "EventMessageFile", 0, 0,
+				(unsigned char *)regPath, &i) != ERROR_SUCCESS) {
+			RegCloseKey(hk);
+			XSRETURN_NO;
+	    }
+
+		RegCloseKey(hk);
+		
+	    if (ExpandEnvironmentStrings(regPath, msgfile, sizeof(msgfile)) == 0) {
+			XSRETURN_NO;
+	    }
+		
+		dll = LoadLibraryEx(msgfile, 0, LOAD_LIBRARY_AS_DATAFILE);
+	    
+		if (!dll) {
+			XSRETURN_NO;
 	    }
 
 	    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
 			      | FORMAT_MESSAGE_FROM_HMODULE
 			      | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-			      dll, id, 0, (LPTSTR)&MsgBuf, 0, strings) == 0)
-	    {
-		FreeLibrary(dll);
-		XSRETURN_NO;
+			      dll, id, 0, (LPTSTR)&MsgBuf, 0, strings) == 0) {
+			FreeLibrary(dll);
+			XSRETURN_NO;
 	    }
-
+		
+			//printf("Got %s to return\n", MsgBuf);
 	    SETPV(4, MsgBuf);
 
 	    LocalFree(MsgBuf);

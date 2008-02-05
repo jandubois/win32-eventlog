@@ -1,5 +1,24 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.062 (unreleased)
+    - fix for memory leak in EventLog due to lack of DESTROY()
+      (suggested by Jan Dubois <jan.dubois@ibm.net>)
+    - Report() method uses 'Source' and 'Computer' fields in passed
+      hashref if they exist, and uses the same fields from the EventLog
+      object if they don't.  NOTE: THIS IS A POTENTIAL COMPATIBILITY
+      ISSUE.
+
+0.06  Tue Feb  2 20:52:00 1999
+    - new method overloaded to support backup eventlogs
+	- GetEventLogText now processes embedded %%xxx strings.
+	- Automatic call to GetEventLogMessageText removed from Read
+	  method.
+    - GetMessageText function and variable added
+    - Message field supported by previous version now only
+	  available either by setting $Win32::EventLog::GetMessageText=1
+	  or calling Win32::EventLog::GetMessageText function.
+	- Some documentation added.
+	
 0.05  Sat Nov 14 23:04:41 1998
 	- support 'User' and 'Message' fields (suggested by
 	  Martin Pauley <martin.pauley@ulsterbank.ltd.uk>)
