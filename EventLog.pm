@@ -7,7 +7,7 @@
 
 package Win32::EventLog;
 
-$VERSION = $VERSION = '0.02';
+$VERSION = $VERSION = '0.03';
 
 require Exporter;
 require DynaLoader;
@@ -141,8 +141,7 @@ sub Read
      $dataoffset) = unpack('l6s4l6', $header);
 
     # make a hash out of the values returned from ReadEventLog.
-
-    $_[2] = { 'Source'			=> $source,
+    my %h = ( 'Source'			=> $source,
 	      'Computer'		=> $computer,
 	      'Length'			=> $datalength,
 	      'Category'		=> $eventcategory,
@@ -154,8 +153,14 @@ sub Read
 	      'ClosingRecordNumber'	=> $closingrecordnumber,
 	      'Strings'			=> $strings,
 	      'Data'			=> $data,
-	    };
+	    );
 
+    if (ref($_[2]) eq 'HASH') {
+	%{$_[2]} = %h;		# this needed for Read(...,\%foo) case
+    }
+    else {
+	$_[2] = \%h;
+    }
     unless ($result) { $! = Win32::GetLastError() }
     return $result;
 }
