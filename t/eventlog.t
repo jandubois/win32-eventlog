@@ -4,6 +4,7 @@
 # eventlog.t - Event Logging tests
 
 BEGIN {
+    require Win32 unless defined &Win32::IsWin95;
     if (Win32::IsWin95()) {
         print"1..0\n";
         print STDERR "# EventLog is not supported on Windows 95 or Win32s\n";
