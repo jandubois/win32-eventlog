@@ -319,6 +319,81 @@ ReadEventLog(handle,Flags,Record,evtHeader,sourceName,computerName,sid,data,stri
     OUTPUT:
     	RETVAL
 
+bool
+GetEventLogText(source,id,longstring,numstrings,message)
+	char *source
+	DWORD id
+	char *longstring
+	int numstrings
+	char *message = NO_INIT
+    CODE:
+	{
+	    static const char *EVFILE[] = { "System", "Security", "Application" };
+	    HINSTANCE dll;
+	    HKEY hk;
+	    char *MsgBuf, *strings[16], *ptr;
+	    char msgfile[MAX_PATH], tmp[MAX_PATH];
+	    DWORD i;
+	    unsigned short j;
+
+	    for (j=0; j < (sizeof(EVFILE)/sizeof(EVFILE[0])); ++j) {
+		sprintf(tmp,
+			"SYSTEM\\CurrentControlSet\\Services\\EventLog\\%s\\%s",
+			EVFILE[j], source);
+		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, tmp, 0, KEY_READ, &hk)
+		    == ERROR_SUCCESS)
+		{
+		    break;
+		}
+	    }
+
+	    if (j >= (sizeof(EVFILE)/sizeof(EVFILE[0]))) {
+		XSRETURN_NO;
+	    }
+
+	    i = sizeof(tmp);
+	    if (RegQueryValueEx(hk, "EventMessageFile", 0, 0,
+				(unsigned char *)tmp, &i)
+	        != ERROR_SUCCESS)
+	    {
+		XSRETURN_NO;
+	    }
+
+	    RegCloseKey(hk);
+
+	    if (ExpandEnvironmentStrings(tmp, msgfile, sizeof(msgfile)) == 0) {
+		XSRETURN_NO;
+	    }
+	    
+	    dll = LoadLibraryEx(msgfile, 0, LOAD_LIBRARY_AS_DATAFILE);
+	    if (!dll) {
+		XSRETURN_NO;
+	    }
+
+	    ptr = longstring;
+	    for (j=0; j<numstrings; ++j) {
+		strings[j] = ptr;
+		ptr += strlen(ptr)+1;
+	    }
+
+	    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
+			      | FORMAT_MESSAGE_FROM_HMODULE
+			      | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+			      dll, id, 0, (LPTSTR)&MsgBuf, 0, strings) == 0)
+	    {
+		FreeLibrary(dll);
+		XSRETURN_NO;
+	    }
+
+	    SETPV(4, MsgBuf);
+
+	    LocalFree(MsgBuf);
+	    FreeLibrary(dll);
+	    XSRETURN_YES;
+	}
+    OUTPUT:
+	RETVAL
+
 double
 constant(name,arg)
     char *          name
@@ -336,7 +411,7 @@ BackupEventLog(hEventLog,lpszBackupFileName)
 		RETVAL = BackupEventLog(lpEvtLog->hLog, lpszBackupFileName);
 	}
     OUTPUT:
-    RETVAL
+	RETVAL
 
 bool
 ClearEventLog(hEventLog,lpszBackupFileName)
@@ -357,7 +432,7 @@ ClearEventLog(hEventLog,lpszBackupFileName)
 	    }
 	}
     OUTPUT:
-    RETVAL
+	RETVAL
 
 bool
 CloseEventLog(hEventLog)
@@ -376,7 +451,7 @@ CloseEventLog(hEventLog)
 	    }
 	}
     OUTPUT:
-    RETVAL
+	RETVAL
 
 bool
 DeregisterEventSource(hEventLog)

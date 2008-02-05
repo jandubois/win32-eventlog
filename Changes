@@ -1,5 +1,9 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.05  Sat Nov 14 23:04:41 1998
+	- support 'User' and 'Message' fields (suggested by
+	  Martin Pauley <martin.pauley@ulsterbank.ltd.uk>)
+
 0.04  Mon Sep  7 22:41:27 1998
 	- grow buffer for ReadEventLog() as needed
 

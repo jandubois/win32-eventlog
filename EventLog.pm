@@ -7,7 +7,7 @@
 
 package Win32::EventLog;
 
-$VERSION = $VERSION = '0.04';
+$VERSION = $VERSION = '0.05';
 
 require Exporter;
 require DynaLoader;
@@ -140,6 +140,10 @@ sub Read
      $datalength,
      $dataoffset) = unpack('l6s4l6', $header);
 
+    # get the text message here
+    my $message='';
+    GetEventLogText($source, $eventid, $strings, $numstrings, $message) if ($result);
+
     # make a hash out of the values returned from ReadEventLog.
     my %h = ( 'Source'			=> $source,
 	      'Computer'		=> $computer,
@@ -151,8 +155,10 @@ sub Read
 	      'EventID'			=> $eventid,
 	      'EventType'		=> $eventtype,
 	      'ClosingRecordNumber'	=> $closingrecordnumber,
+	      'User'			=> $sid,
 	      'Strings'			=> $strings,
 	      'Data'			=> $data,
+	      'Message'			=> $message,
 	    );
 
     if (ref($_[2]) eq 'HASH') {
