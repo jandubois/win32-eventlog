@@ -1,0 +1,6 @@
+Revision history for Perl extension Win32::EventLog.
+
+0.01  Sat Apr  5 15:20:38 1997
+	- original version; created by h2xs 1.18
+	- imported from Actiware version
+
