@@ -3,5 +3,6 @@ EventLog.pm
 EventLog.xs
 MANIFEST
 Makefile.PL
+ppport.h
 t/eventlog.t
 typemap

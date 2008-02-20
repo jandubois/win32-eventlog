@@ -10,7 +10,7 @@
 #include "XSUB.h"
 #include <wchar.h>
 
-#include "../ppport.h"
+#include "ppport.h"
 
 #define SETIV(index,value) sv_setiv(ST(index),value)
 #define SETPV(index,string) sv_setpv(ST(index),string)
