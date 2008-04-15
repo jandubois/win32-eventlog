@@ -9,7 +9,7 @@ package Win32::EventLog;
 
 use strict;
 use vars qw($VERSION $AUTOLOAD @ISA @EXPORT $GetMessageText);
-$VERSION = '0.074';
+$VERSION = '0.075';
 
 require Exporter;
 require DynaLoader;

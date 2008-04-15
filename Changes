@@ -1,5 +1,11 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.075 Wed Apr 15 2008 (Jan Dubois)
+      - version 0.075 for separate upload to CPAN
+      - simplified Makefile.PL
+      - added META.yml
+      - added ppport.h
+
 0.074 (unreleased)
     - EventLog can sometimes fail to retrieve messages (fix suggested
       by Patrice M. I. Parmentier in

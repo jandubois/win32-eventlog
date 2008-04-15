@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name: Win32-EventLog
 abstract: Process Win32 Event Logs from Perl
-version: 0.074
+version: 0.075
 author:
   - Bret Giddings <bret@essex.ac.uk>
   - Jan Dubois <jand@activestate.com>
