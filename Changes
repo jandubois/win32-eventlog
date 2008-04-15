@@ -1,6 +1,6 @@
 Revision history for Perl extension Win32::EventLog.
 
-0.075 Wed Apr 15 2008 (Jan Dubois)
+0.075 Tue Apr 15 2008 (Jan Dubois)
       - version 0.075 for separate upload to CPAN
       - simplified Makefile.PL
       - added META.yml
