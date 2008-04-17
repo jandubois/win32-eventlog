@@ -210,7 +210,7 @@ WriteEventLog(server, source, eventType, category, eventID, reserved, data, ...)
 CODE:
 {
     int index;
-    unsigned int bufLength, dataLength;
+    STRLEN bufLength, dataLength;
     char *buffer, **array;
     HANDLE hLog;
 
@@ -234,10 +234,10 @@ CODE:
             hLog,                /* handle returned by RegisterEventSource */
             (WORD)SvIV(ST(2)),   /* event type to log */
             (WORD)SvIV(ST(3)),   /* event category */
-            SvIV(ST(4)),         /* event identifier */
+            (DWORD)SvIV(ST(4)),  /* event identifier */
             NULL,                /* user security identifier (optional) */
             (WORD)(items - 7),   /* number of strings to merge with message */
-            dataLength,          /* size of raw (binary) data (in bytes) */
+            (DWORD)dataLength,   /* size of raw (binary) data (in bytes) */
             (const char**)array, /* array of strings to merge with message */
             data                 /* address of binary data */
             );
@@ -373,7 +373,7 @@ CODE:
 {
     HINSTANCE dll = NULL;
     HKEY hk;
-    int length = SvCUR(ST(2))+1;
+    int length = (int)SvCUR(ST(2))+1;
 
     /* XXX TODO:
      * XXX ParameterMessageFile can also be a semicolon separated list of files
@@ -390,7 +390,8 @@ CODE:
     LONG lResult;
     unsigned short j;
     char *percent;
-    int percentLen, msgLen, gotPercent;
+    STRLEN percentLen, msgLen;
+    int gotPercent;
 
     /* XXX this seems bogus... */
     message = NULL;
@@ -519,7 +520,7 @@ CODE:
                 percentLen++;
             } while (id2/=10);	/* compute length of %%xxx string */
 
-            msgLen = strlen(MsgBuf);
+            msgLen = (int)strlen(MsgBuf);
             Newz(0, tmpx, strlen(strings[j])+msgLen-percentLen+1, char);
             strncpy(tmpx, strings[j], percent-strings[j]);
             strncat(tmpx, MsgBuf,

@@ -5,6 +5,7 @@ Revision history for Perl extension Win32::EventLog.
       - simplified Makefile.PL
       - added META.yml
       - added ppport.h
+      - fixes for Win64 support
 
 0.074 (unreleased)
     - EventLog can sometimes fail to retrieve messages (fix suggested
