@@ -1,81 +1,49 @@
-# (c) 1995 Microsoft Corporation. All rights reserved.
-#	Developed by ActiveWare Internet Corp., http://www.ActiveWare.com
+use strict;
+use warnings;
 
-# eventlog.t - Event Logging tests
+use Test;
 
 BEGIN {
     require Win32 unless defined &Win32::IsWin95;
     if (Win32::IsWin95()) {
         print"1..0\n";
         print STDERR "# EventLog is not supported on Windows 95 or Win32s\n";
+	exit 0;
     }
 }
 
-use strict;
 use Win32::EventLog;
 
-my $bug = 1;
+plan tests => 11;
 
-# accounting for the test harness
-open ME, $0 or die $!;
-my $bugs = grep /^\$bug\+\+;\n$/, <ME>;
-close ME;
+ok(Win32::EventLog::Open(my $EventObj, "WinApp", ""));
 
-print "1..$bugs\n";
+ok($EventObj->GetNumber(my $number));
 
-Win32::EventLog::Open(my $EventObj, 'WinApp', '') or print "not ";
-print "ok $bug\n";
-$bug++;
+my $Event = {
+    Category  => 50,
+    EventType => EVENTLOG_INFORMATION_TYPE,
+    EventID   => 100,
+    Strings   => "Windows is good",
+    Data      => "unix",
+};
 
-$EventObj->GetNumber(my $number) or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventObj->Report($Event));
 
-my $Event = {Category => 50,
-	     EventType => EVENTLOG_INFORMATION_TYPE,
-	     EventID => 100,
-	     Strings => "Windows is good",
-	     Data => 'unix',
-	    };
+ok($EventObj->GetNumber($number));
 
-$EventObj->Report($Event) or print "not ";
-print "ok $bug\n";
-$bug++;
-
-$EventObj->GetNumber($number) or print "not ";
-print "ok $bug\n";
-$bug++;
-
-$EventObj->GetOldest(my $oldNumber) or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventObj->GetOldest(my $oldNumber));
 
 $number += $oldNumber - 1;
 
-$EventObj->Read((EVENTLOG_SEEK_READ | EVENTLOG_FORWARDS_READ),
-		$number, my $EventInfo) or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventObj->Read((EVENTLOG_SEEK_READ | EVENTLOG_FORWARDS_READ), $number, my $EventInfo));
 
-$EventInfo->{EventID} == 100 or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventInfo->{EventID}, 100);
 
-$EventInfo->{Category} == 50 or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventInfo->{Category}, 50);
 
-$EventInfo->{EventType} == EVENTLOG_INFORMATION_TYPE or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventInfo->{EventType}, EVENTLOG_INFORMATION_TYPE);
 
-$EventInfo->{Strings} =~/Windows is good/ or print "not ";
-print "ok $bug\n";
-$bug++;
+ok($EventInfo->{Strings}, qr/Windows is good/);
 
-$EventInfo->{Data} eq 'unix' or print "not ";
-print "ok $bug\n";
-$bug++;
-
-
-
+ok($EventInfo->{Data}, 'unix');
