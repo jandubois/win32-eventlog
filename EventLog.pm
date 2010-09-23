@@ -1,7 +1,7 @@
 #
 # EventLog.pm
 #
-# Creates an object oriented interface to the Windows NT Evenlog
+# Creates an object oriented interface to the Windows NT event log
 # Written by Jesse Dougherty
 #
 
@@ -459,13 +459,15 @@ file $dest exists, the function will fail.
 
 =head1 BUGS
 
-None currently known.
+See L<https://rt.cpan.org/NoAuth/Bugs.html?Dist=Win32-EventLog>
 
 The test script for 'make test' should be re-written to use the
 EventLog object.
 
 =head1 AUTHOR
 
-Original code by Jesse Dougherty for HiP Communications. Additional
-fixes and updates attributed to Martin Pauley
-<martin.pauley@ulsterbank.ltd.uk>) and Bret Giddings (bret@essex.ac.uk).
+Original code by Jesse Dougherty for HiP Communications.
+
+Additional fixes and updates attributed to Martin Pauley
+(<martin.pauley@ulsterbank.ltd.uk>), Bret Giddings (<bret@essex.ac.uk>)
+and Olivier MenguE<eacute> (<dolmen@cpan.org>).
