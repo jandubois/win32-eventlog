@@ -283,7 +283,7 @@ CODE:
 	    lpEvtLog->Flags      = Flags;
 	    lpEvtLog->NumEntries = 0;
 	}
-	if ((lpEvtLog->NumEntries == 0) || (Record != 0)) {
+	if (lpEvtLog->NumEntries == 0) {
 	redo_read:
             result = ReadEventLogA(lpEvtLog->hLog, Flags, Record,
                                    lpEvtLog->BufPtr, lpEvtLog->BufLen,
