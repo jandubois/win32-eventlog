@@ -1,5 +1,17 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.077
+      - fix for skipped record when reading in SEQUENTIAL mode
+        (RT#61484) by Olivier Mengué. The OFFSET argument is now
+        completely ignored in SEQUENTIAL read as in the underlying
+        Win32 implementation. A '0' value previously had a special
+        behaviour which bypassed the cache and so gave unpredictable
+        results.
+      - added test for RT#61484 by Olivier Mengué.
+      - refactored ReadEventLog (in SEEK mode in the case where we are
+        reading sequentially) to use the cached entries instead of
+        re-reading every time. Olivier Mengué.
+
 0.076 Wed Jul 02 2008 (Jan Dubois)
       - Make sure the regression tests are properly skipped on Win95
 
