@@ -7,3 +7,4 @@ META.yml
 ppport.h
 t/eventlog.t
 typemap
+INSTALL
