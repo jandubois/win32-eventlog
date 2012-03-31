@@ -1,6 +1,3 @@
-# Test case for bug RT#61484
-# Author : Olivier Mengué
-
 use strict;
 use warnings;
 
@@ -59,7 +56,7 @@ use Test::More tests => 122;
     sub new
     {
         my $class = shift;
-        my $self = TestLogSeq::new($class, @_);
+        my $self = $class->SUPER::new(@_);
         $self->{flags} = (EVENTLOG_SEEK_READ | EVENTLOG_BACKWARDS_READ);
 
         my $log = $self->{log};
@@ -85,6 +82,7 @@ sub check_entries
     is(scalar localtime $a->{TimeGenerated}, scalar localtime $b->{TimeGenerated}, 'check TimeGenerated is "'.scalar(localtime $a->{TimeGenerated}).'"');
     #foreach my $attr (qw(RecordNumber Computer Source EventType Category EventID Message)) {
     foreach my $attr (qw(RecordNumber)) {
+        note((scalar localtime $a->{TimeGenerated})." ".$a->{attr});
         is($a->{$attr}, $b->{$attr}, "check $attr is $b->{$attr}");
     }
 }
