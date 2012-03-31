@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 122;
+use Test::More;
 
 
 {
@@ -76,14 +76,20 @@ use Test::More tests => 122;
 }
 
 
+my @CHECK_ATTR = qw<RecordNumber>;
+@CHECK_ATTR = qw<RecordNumber Computer Source EventType Category EventID> if $ENV{TEST_VERBOSE};
+use constant COUNT => 15;
+
+plan tests => 2 + COUNT * (2+2+1+1+@CHECK_ATTR);
+
 sub check_entries
 {
     my ($a, $b) = @_;
-    is(scalar localtime $a->{TimeGenerated}, scalar localtime $b->{TimeGenerated}, 'check TimeGenerated is "'.scalar(localtime $a->{TimeGenerated}).'"');
+    is(scalar localtime $a->{TimeGenerated}, scalar localtime $b->{TimeGenerated}, 'TimeGenerated is "'.scalar(localtime $a->{TimeGenerated}).'"');
     #foreach my $attr (qw(RecordNumber Computer Source EventType Category EventID Message)) {
-    foreach my $attr (qw(RecordNumber)) {
-        note((scalar localtime $a->{TimeGenerated})." ".$a->{attr});
-        is($a->{$attr}, $b->{$attr}, "check $attr is $b->{$attr}");
+    #foreach my $attr (qw(RecordNumber Computer Source EventType Category EventID)) {
+    foreach my $attr (@CHECK_ATTR) {
+        is($a->{$attr}, $b->{$attr}, "$attr is $b->{$attr}");
     }
 }
 
@@ -91,8 +97,8 @@ sub check_entries
 my $log_seq = TestLogSeq->new;
 my $log_seek = TestLogSeek->new;
 
-foreach (1..15) {
-    pass "== Read $_ ==";
+foreach (1..COUNT) {
+    note "== Read $_ ==";
     check_entries($log_seq->read, $log_seek->read);
 }
 
