@@ -6,7 +6,7 @@ author:
   - Bret Giddings <bret@essex.ac.uk>
   - Jan Dubois <jand@activestate.com>
 license: perl
-requires: 
+requires:
   perl: 5.6
 resources:
   license: http://dev.perl.org/licenses/
