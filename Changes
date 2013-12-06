@@ -1,5 +1,14 @@
 Revision history for Perl extension Win32::EventLog.
 
+0.077 Fri Dec 6 2013
+      - Fix required perl version 5.6 -> 5.006.
+      - Add Github repo link to META.yml
+      - Typo fixes by David Steinbrunner
+
+      Note: This release does not contain the changes from the 'master' branch
+      of the repo related to [rt#61484].
+      See https://rt.cpan.org/Public/Bug/Display.html?id=61484#txn-838619
+
 0.076 Wed Jul 02 2008 (Jan Dubois)
       - Make sure the regression tests are properly skipped on Win95
 
